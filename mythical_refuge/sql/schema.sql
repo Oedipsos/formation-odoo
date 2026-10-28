@@ -86,9 +86,9 @@ CREATE TABLE destinations (
 -- -----------------------------------------------------------------------------
 CREATE TABLE missions (
     id              SERIAL        PRIMARY KEY,
-    creature_id     INTEGER       NOT NULL REFERENCES creatures (id)    ON DELETE RESTRICT,
-    handler_id      INTEGER       NOT NULL REFERENCES employees (id)    ON DELETE RESTRICT,
-    destination_id  INTEGER       NOT NULL REFERENCES destinations (id) ON DELETE RESTRICT,
+    creature_id     INTEGER       REFERENCES creatures (id)    ON DELETE RESTRICT,
+    handler_id      INTEGER       REFERENCES employees (id)    ON DELETE RESTRICT,
+    destination_id  INTEGER       REFERENCES destinations (id) ON DELETE RESTRICT,
     departure_date  DATE          NOT NULL,
     duration_days   INTEGER       NOT NULL,
     base_reward     NUMERIC(10,2) NOT NULL,
@@ -105,13 +105,13 @@ CREATE TABLE missions (
 -- health_records: enriched junction table (creature x veterinarian)
 -- -----------------------------------------------------------------------------
 CREATE TABLE health_records (
-    id           SERIAL   PRIMARY KEY,
-    creature_id  INTEGER  NOT NULL REFERENCES creatures (id) ON DELETE CASCADE,
-    vet_id       INTEGER  NOT NULL REFERENCES employees (id) ON DELETE RESTRICT,
-    examined_on  DATE     NOT NULL DEFAULT CURRENT_DATE,
-    status       VARCHAR(20) NOT NULL,
-    diagnosis    TEXT     NOT NULL,
-    treatment    TEXT     NOT NULL DEFAULT '',
+    id           SERIAL         PRIMARY KEY,
+    creature_id  INTEGER        REFERENCES creatures (id) ON DELETE CASCADE,
+    vet_id       INTEGER        REFERENCES employees (id) ON DELETE RESTRICT,
+    examined_on  DATE           NOT NULL DEFAULT CURRENT_DATE,
+    status       VARCHAR(20)    NOT NULL,
+    diagnosis    TEXT           NOT NULL,
+    treatment    TEXT           NOT NULL DEFAULT '',
 
     CONSTRAINT chk_health_records_status
         CHECK (status IN ('healthy', 'under_observation', 'in_treatment', 'quarantine'))
