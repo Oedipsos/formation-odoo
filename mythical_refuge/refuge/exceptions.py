@@ -8,3 +8,11 @@ class ValidationError(RefugeError):
 
 class MissionRefusedError(RefugeError):
     pass
+
+
+class EnclosureFullError(RefugeError):
+    pass
+
+
+class IncompatibleSpeciesError(RefugeError):
+    pass
