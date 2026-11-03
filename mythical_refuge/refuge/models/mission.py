@@ -1,6 +1,6 @@
 from decimal import Decimal
-from dataclasses import dataclass
-from datetime import date
+from dataclasses import dataclass, field
+from datetime import date, timedelta
 
 from refuge.exceptions import ValidationError
 
@@ -14,9 +14,9 @@ class Mission:
     duration_days: int
     base_reward: Decimal
     danger_multiplier: Decimal = Decimal("1.0")
-    returned_on: None | date
+    returned_on: date | None = None
     notes: str = ""
-    id: None | int = field(default=None, repr=False)
+    id: int | None = field(default=None, repr=False)
 
     def __post_init__(self):
         if not self.destination:
@@ -35,7 +35,7 @@ class Mission:
 
     @property
     def due_date(self) -> date:
-        return self.departure_date + self.duration_days
+        return self.departure_date + timedelta(days=self.duration_days)
 
     @property
     def reward(self) -> int:
@@ -56,11 +56,10 @@ class Mission:
             raise ValidationError("cannot return from mission before the departure")
         self.returned_on = on
 
-    def days_late(self, today: date | None = None) -> int:
-        if today is None:
-            today = date.today()
+    def days_late(self) -> int:
+        reference_date = self.returned_on or date.today()
 
-        return (today - self.due_date).days
+        return (reference_date - self.due_date).days
 
     def __eq__(self, other: Mission) -> bool:
         if not isinstance(other, Mission):
@@ -71,4 +70,4 @@ class Mission:
         )
 
     def __hash__(self) -> int:
-        return hash((self.creature, self.departure_date))
+        return hash((self.creature_name, self.departure_date))

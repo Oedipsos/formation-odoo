@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
+from datetime import date
+
 
 from refuge.exceptions import ValidationError
 from refuge.models.creature import Creature
+from refuge.models.health_record import HealthRecord, HealthStatus
 
 
 class Employee(ABC):
@@ -74,7 +77,20 @@ class Veterinarian(Employee):
         name = self.full_name
         return f"{name} examines and treats the creatures"
 
-    def perform_checkup(self, creature: Creature, status: str, diagnosis: str) -> str:
-        name = self.full_name
-        c_name = creature.name
-        return f"{name} examined {c_name}: {status} ({diagnosis})"
+    def perform_checkup(
+        self,
+        creature: Creature,
+        status: HealthStatus,
+        diagnosis: str,
+        treatment: str = "",
+        on: date | None = None,
+    ) -> str:
+        on = on or date.today()
+        return HealthRecord(
+            creature.name,
+            self.full_name,
+            on,
+            HealthStatus(status),
+            diagnosis,
+            treatment,
+        )
