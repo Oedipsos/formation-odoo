@@ -74,7 +74,7 @@ class Enclosure:
 
     def can_accept(self, creature: Creature) -> bool:
         _, compatible = self._check_pair_compatibility(creature)
-        return compatible
+        return creature.name not in self and not self.is_full and compatible
 
     def add(self, creature: Creature):
         if creature.name in self:
