@@ -2,7 +2,14 @@ from refuge.db.connection import DatabaseConnection
 from refuge.exceptions import ValidationError, NotFoundError
 from refuge.models.creature import Creature
 from refuge.models.employee import Employee
-from refuge.repositories.protocols import CreatureRepository, EmployeeRepository
+from refuge.models.health_record import HealthRecord
+from refuge.models.mission import Mission
+from refuge.repositories.protocols import (
+    CreatureRepository,
+    EmployeeRepository,
+    MissionRepository,
+    HealthRecordRepository,
+)
 from refuge.repositories.factories import CreatureFactory, EmployeeFactory
 
 
@@ -136,3 +143,32 @@ class PostgresEmployeeRepository(EmployeeRepository):
             rows = cur.fetchall()
 
         return [EmployeeFactory.create(row) for row in rows]
+
+
+class PostgresMissionRepository(MissionRepository):
+    def __init__(self, db: DatabaseConnection):
+        self.db = db
+
+    def add(self, mission: Mission) -> Mission:
+        c_name = mission.creature_name
+        d_name = mission.destination
+        h_name = mission.handler_name
+        dep_date = mission.departure_date
+        duration_days = mission.duration_days
+        base_reward = mission.base_reward
+
+        with self.db.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO missions (creature_id, handler_id, destination_id,
+                    departure_date, duration_days, base_reward)
+                SELECT c.id, e.id, d.id, %s, %s, %s
+                FROM creatures c, employees e, destinations d
+                WHERE c.name = %s AND d.name = %s AND e.full_name = %s
+                RETURNING id
+                """,
+                (dep_date, duration_days, base_reward, c_name, d_name, h_name),
+            )
+            mission.id = cur.fetchone()["id"]
+
+        return mission
