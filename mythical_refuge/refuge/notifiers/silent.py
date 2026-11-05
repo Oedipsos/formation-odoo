@@ -1,0 +1,3 @@
+class SilentNotifier:
+    def notify(self, message: str):
+        ...

@@ -20,3 +20,7 @@ class IncompatibleSpeciesError(RefugeError):
 
 class NotFoundError(RefugeError):
     pass
+
+
+class NotificationError(RefugeError):
+    pass
