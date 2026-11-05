@@ -15,6 +15,7 @@ class InMemoryCreatureRepository(CreatureRepository):
             raise ValidationError(f"key {name} already exists in repository.")
         creature.id = self.next_id
         self.next_id += 1
+        self.creatures[name] = creature
         return creature
 
     def get(self, name: str) -> Creature:
@@ -28,9 +29,15 @@ class InMemoryCreatureRepository(CreatureRepository):
 
     def update(self, creature: Creature) -> None:
         try:
-            current_creature = self.get(creature.name)
+            stored_creature = self.get(creature.name).id
+            stored_creature.power_level = creature.power_level
+            if hasattr(stored_creature, "resurrection_count"):
+                stored_creature.resurrection_count = getattr(
+                    creature, "resurrection_count", 0
+                )
+            stored_creature._in_refuge = creature.in_refuge
         except NotFoundError:
-            self.add(creature)
+            return
 
 
 class InMemoryEmployeeRepository(EmployeeRepository):

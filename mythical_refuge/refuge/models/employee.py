@@ -11,12 +11,24 @@ class Employee(ABC):
     ROLE: str = "employee"
     PERMISSIONS: frozenset[str] = frozenset()
 
-    def __init__(self, full_name: str, email: str):
+    def __init__(self, full_name: str, email: str, *, id: int | None = None, **kwargs):
+        super().__init__(**kwargs)
         if "@" not in email:
             raise ValidationError("invalid email")
         self.email = email
         self.full_name = full_name
-        super().__init__()
+        self.id = id
+
+    @classmethod
+    def from_dict(cls, dict_):
+        return cls(**dict_)
+
+    def to_dict(self) -> dict[str, str | int]:
+        return {
+            "id": self.id,
+            "full_name": self.full_name,
+            "email": self.email,
+        }
 
     def can(self, permission: str) -> bool:
         return permission in self.PERMISSIONS
@@ -38,8 +50,8 @@ class Handler(Employee):
     ROLE = "handler"
     PERMISSIONS = frozenset({"escort_mission"})
 
-    def __init__(self, full_name: str, email: str, certification_level: int):
-        super().__init__(full_name, email)
+    def __init__(self, full_name: str, email: str, certification_level: int, **kwargs):
+        super().__init__(full_name, email, **kwargs)
         self.certification_level = certification_level
 
     @property

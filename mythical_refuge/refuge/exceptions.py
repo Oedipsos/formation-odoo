@@ -16,3 +16,7 @@ class EnclosureFullError(RefugeError):
 
 class IncompatibleSpeciesError(RefugeError):
     pass
+
+
+class NotFoundError(RefugeError):
+    pass

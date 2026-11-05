@@ -4,11 +4,23 @@ from refuge.models.mixins import FlyingMixin
 
 
 class Dragon(FlyingMixin, Creature):
-    """docstring for Dragon"""
-
     def __init__(self, name, origin, power_level, element, **kwargs):
         super().__init__(name, "Dragon", origin, power_level, **kwargs)
         self.element = element
+
+    @classmethod
+    def from_dict(cls, dict_: dict[str, str | int]):
+        name = dict_.pop("name")
+        origin = dict_.pop("origin")
+        power_level = dict_.pop("power_level")
+        element = dict_.pop("element")
+
+        return cls(name, origin, power_level, element, **dict_)
+
+    def to_dict(self) -> dict[str, str | int]:
+        dict_ = super().to_dict()
+        dict_["element"] = self.element
+        return dict_
 
     def mission_duration_days(self) -> int:
         return 14
@@ -32,11 +44,23 @@ class Dragon(FlyingMixin, Creature):
 
 
 class Phoenix(FlyingMixin, Creature):
-    """docstring for Phoenix"""
-
     def __init__(self, name, origin, power_level, resurrection_count=0, **kwargs):
         super().__init__(name, "Phoenix", origin, power_level, **kwargs)
         self.resurrection_count = resurrection_count
+
+    @classmethod
+    def from_dict(cls, dict_: dict[str, str | int]):
+        name = dict_.pop("name")
+        origin = dict_.pop("origin")
+        power_level = dict_.pop("power_level")
+        resurrection_count = dict_.pop("resurrection_count")
+
+        return cls(name, origin, power_level, resurrection_count, **dict_)
+
+    def to_dict(self) -> dict[str, str | int]:
+        dict_ = super().to_dict()
+        dict_["resurrection_count"] = self.resurrection_count
+        return dict_
 
     def mission_duration_days(self) -> int:
         return 7
@@ -52,12 +76,18 @@ class Phoenix(FlyingMixin, Creature):
 
 
 class Unicorn(Creature):
-    """docstring for Unicorn"""
-
     MIN_MISSION_POWER = 40
 
     def __init__(self, name, origin, power_level, **kwargs):
         super().__init__(name, "Unicorn", origin, power_level, **kwargs)
+
+    @classmethod
+    def from_dict(cls, dict_: dict[str, str | int]):
+        name = dict_.pop("name")
+        origin = dict_.pop("origin")
+        power_level = dict_.pop("power_level")
+
+        return cls(name, origin, power_level, **dict_)
 
     def mission_duration_days(self) -> int:
         return 3
@@ -66,7 +96,7 @@ class Unicorn(Creature):
         name = self.name
         return f"{name} heals its allies and gallops faster than the wind."
 
-    def refusal_reason(self) -> None | str:
+    def refusal_reason(self) -> str | None:
         name = self.name
         power = self.power_level
         if power < Unicorn.MIN_MISSION_POWER:
@@ -74,10 +104,16 @@ class Unicorn(Creature):
 
 
 class Griffin(FlyingMixin, Creature):
-    """docstring for Griffin"""
-
     def __init__(self, name, origin, power_level, **kwargs):
         super().__init__(name, "Griffin", origin, power_level, **kwargs)
+
+    @classmethod
+    def from_dict(cls, dict_: dict[str, str | int]):
+        name = dict_.pop("name")
+        origin = dict_.pop("origin")
+        power_level = dict_.pop("power_level")
+
+        return cls(name, origin, power_level, **dict_)
 
     def mission_duration_days(self) -> int:
         return 10
@@ -88,10 +124,16 @@ class Griffin(FlyingMixin, Creature):
 
 
 class Basilisk(Creature):
-    """docstring for Basilisk"""
-
     def __init__(self, name, origin, power_level, **kwargs):
         super().__init__(name, "Basilisk", origin, power_level, **kwargs)
+
+    @classmethod
+    def from_dict(cls, dict_: dict[str, str | int]):
+        name = dict_.pop("name")
+        origin = dict_.pop("origin")
+        power_level = dict_.pop("power_level")
+
+        return cls(name, origin, power_level, **dict_)
 
     def mission_duration_days(self) -> int:
         return 5
@@ -99,56 +141,3 @@ class Basilisk(Creature):
     def special_ability(self) -> str:
         name = self.name
         return f"{name} petrifies its enemies with a single gaze."
-
-
-class WrongDragon(Creature, FlyingMixin):
-    """docstring for Dragon"""
-
-    def __init__(self, name, origin, power_level, element, **kwargs):
-        super().__init__(name, "Dragon", origin, power_level, **kwargs)
-        self.element = element
-
-    def mission_duration_days(self) -> int:
-        return 14
-
-    def special_ability(self) -> str:
-        name = self.name
-        element = self.element
-        return f"{name} breathes {element} and flies at great speed."
-
-    def __str__(self) -> str:
-        base = super().__str__()
-        element = self.element
-        return base + f" - element: {element}"
-
-    def __repr__(self) -> str:
-        name = self.name
-        origin = self.origin
-        power_level = self.power_level
-        element = self.element
-        return f"Dragon({name=}, {origin=}, {power_level=}, {element=})"
-
-
-class StatueDragon(Dragon):
-    """A stone dragon displayed at the refuge entrance."""
-
-    def special_ability(self) -> str:
-        raise NotImplementedError("Statues have no abilities.")
-
-    def refusal_reason(self) -> str | None:
-        return "A statue cannot move."
-
-
-class RoboticGuard:
-    def __init__(self, name: str, model: str):
-        self.name = name
-        self.model = model
-
-    def special_ability(self) -> str:
-        return f"{self.name} patrols the perimeter and fires laser beams."
-
-    def mission_duration_days(self) -> int:
-        return 1
-
-    def __str__(self) -> str:
-        return f"{self.name} [Robotic Guard — model {self.model}]"

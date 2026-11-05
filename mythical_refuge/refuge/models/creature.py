@@ -7,7 +7,17 @@ class Creature(abc.ABC):
     _total_creatures = 0
     VALID_SPECIES = frozenset(("Dragon", "Phoenix", "Unicorn", "Griffin", "Basilisk"))
 
-    def __init__(self, name: str, species: str, origin: str, power_level: int):
+    def __init__(
+        self,
+        name: str,
+        species: str,
+        origin: str,
+        power_level: int,
+        *,
+        id: int | None = None,
+        in_refuge: bool = True,
+        **kwargs,
+    ):
         super().__init__()
 
         if Creature.is_valid_species(species):
@@ -18,7 +28,8 @@ class Creature(abc.ABC):
         self.name = name
         self.__origin = origin
         self.power_level = power_level
-        self._in_refuge = True
+        self._in_refuge = in_refuge
+        self.id = id
 
         Creature._total_creatures += 1
 
@@ -34,18 +45,28 @@ class Creature(abc.ABC):
         name = self.name
         species = self.species
         origin = self.origin
-        power_level = self.power_level
+        power = self.power_level
 
-        return f"Creature({name=}, {species=}, {origin=}, {power_level=})"
+        return f"Creature({name=}, {species=}, {origin=}, {power=})"
+
+    def to_dict(self) -> dict[str, str | int]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "species": self.species,
+            "origin": self.origin,
+            "power_level": self.power_level,
+            "in_refuge": self.in_refuge,
+        }
 
     @classmethod
     def from_dict(cls, dict_: dict[str, str | int]) -> Creature:
-        name = dict_["name"]
-        species = dict_["species"]
-        origin = dict_["origin"]
-        power_level = dict_["power_level"]
+        name = dict_.pop("name")
+        species = dict_.pop("species")
+        origin = dict_.pop("origin")
+        power = dict_.pop("power_level")
 
-        return cls(name, species, origin, power_level)
+        return cls(name, species, origin, power, **dict_)
 
     @classmethod
     def from_string(cls, text: str) -> Creature:
@@ -110,9 +131,9 @@ class Creature(abc.ABC):
         return cls._total_creatures
 
     @abc.abstractmethod
-    def mission_duration_days() -> int:
+    def mission_duration_days(self) -> int:
         pass
 
     @abc.abstractmethod
-    def special_ability() -> str:
+    def special_ability(self) -> str:
         pass

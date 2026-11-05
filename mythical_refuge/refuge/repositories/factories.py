@@ -11,11 +11,11 @@ from refuge.models.employee import Employee, Veterinarian, Handler
 
 class CreatureFactory:
     _REGISTRY: dict[str, type[Creature]] = {
-        "Dragon": species.Dragon,
-        "Phoenix": species.Phoenix,
-        "Unicorn": species.Unicorn,
-        "Basilisk": species.Basilisk,
-        "Griffin": species.Griffin,
+        "Dragon": Dragon,
+        "Phoenix": Phoenix,
+        "Unicorn": Unicorn,
+        "Basilisk": Basilisk,
+        "Griffin": Griffin,
     }
 
     @classmethod
@@ -23,7 +23,7 @@ class CreatureFactory:
         species = data.pop("species")
 
         try:
-            class_ = _REGISTRY[species]
+            class_ = cls._REGISTRY[species]
         except KeyError:
             raise ValueError(f"Unknown species {species!r}")
 
