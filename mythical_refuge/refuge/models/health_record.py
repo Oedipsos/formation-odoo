@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from enum import StrEnum
 
+
 from refuge.exceptions import ValidationError
 
 

@@ -1,8 +1,10 @@
+import dataclasses
+
 from refuge.db.connection import DatabaseConnection
 from refuge.exceptions import ValidationError, NotFoundError
 from refuge.models.creature import Creature
 from refuge.models.employee import Employee
-from refuge.models.health_record import HealthRecord
+from refuge.models.health_record import HealthRecord, HealthStatus
 from refuge.models.mission import Mission
 from refuge.repositories.protocols import (
     CreatureRepository,
@@ -146,10 +148,17 @@ class PostgresEmployeeRepository(EmployeeRepository):
 
 
 class PostgresMissionRepository(MissionRepository):
+    """
+    Interface between the `missions` table and the client.
+    """
+
     def __init__(self, db: DatabaseConnection):
         self.db = db
 
     def add(self, mission: Mission) -> Mission:
+        """
+        Insert a new mission into the database and sets its ID from the database's reply
+        """
         c_name = mission.creature_name
         d_name = mission.destination
         h_name = mission.handler_name
@@ -169,6 +178,173 @@ class PostgresMissionRepository(MissionRepository):
                 """,
                 (dep_date, duration_days, base_reward, c_name, d_name, h_name),
             )
-            mission.id = cur.fetchone()["id"]
+            if cur.rowcount > 0:
+                mission.id = cur.fetchone()["id"]
+            else:
+                raise NotFoundError("Unknown creature, handler or destination.")
 
         return mission
+
+    def list_all(self) -> list[Mission]:
+        """
+        Query all missions from the database ordered by departure date,
+        and returns it as a list.
+        """
+        with self.db.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    m.id,
+                    c.name as creature_name,
+                    e.full_name as handler_name,
+                    d.name as destination,
+                    m.departure_date,
+                    m.duration_days,
+                    m.base_reward,
+                    d.danger_multiplier,
+                    m.returned_on, 
+                    m.notes
+                FROM missions m
+                JOIN destinations d on d.id = m.destination_id
+                JOIN creatures c on c.id = m.creature_id
+                JOIN employees e on e.id = m.handler_id
+                ORDER BY departure_date;
+                """
+            )
+            rows = cur.fetchall()
+        return [Mission(**row) for row in rows]
+
+    def list_open_for_handler(self, handler_name: str) -> list[Mission]:
+        """
+        Query for all non-finished missions associate to handler whose name is `handler_name`,
+        and returns a list of all such missions.
+        """
+        with self.db.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    m.id,
+                    c.name as creature_name,
+                    e.full_name as handler_name,
+                    d.name as destination,
+                    m.departure_date,
+                    m.duration_days,
+                    m.base_reward,
+                    d.danger_multiplier,
+                    m.returned_on, 
+                    m.notes
+                FROM missions m
+                JOIN destinations d ON d.id = m.destination_id
+                JOIN creatures c ON c.id = m.creature_id
+                JOIN employees e ON e.id = m.handler_id
+                    AND e.full_name = %s
+                WHERE returned_on is NULL
+                """,
+                (handler_name,),
+            )
+            rows = cur.fetchall()
+        return [Mission(**row) for row in rows]
+
+    def get_open_for_creature(self, creature_name: str) -> Mission | None:
+        """
+        Retrieves the Mission where the creature named `creature_name` is sent, if any.
+        Returns None if no such mission is found.
+        """
+        with self.db.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    m.id,
+                    c.name as creature_name,
+                    e.full_name as handler_name,
+                    d.name as destination,
+                    m.departure_date,
+                    m.duration_days,
+                    m.base_reward,
+                    d.danger_multiplier,
+                    m.returned_on, 
+                    m.notes
+                FROM missions m
+                JOIN destinations d ON d.id = m.destination_id
+                JOIN employees e ON e.id = m.handler_id
+                JOIN creatures c ON c.id = m.creature_id
+                    AND c.name = %s
+                WHERE returned_on is NULL
+                """,
+                (creature_name,),
+            )
+            row = cur.fetchone()
+
+        if row is not None:
+            return Mission(**row)
+
+        return None
+
+
+class PostgresHealthRecordRepository(HealthRecordRepository):
+    """
+    Interface between the `heath_records` table and the client.
+    """
+
+    def __init__(self, db: DatabaseConnection):
+        self.db = db
+
+    def add(self, record: HealthRecord) -> HealthRecord:
+        """
+        Insert a new health_record into the database, and sets its ID from the database's reply.
+        """
+        creature_name = record.creature_name
+        vet_name = record.vet_name
+        examined_on = record.examined_on
+        status = record.status
+        diagnosis = record.diagnosis
+        treatment = record.treatment
+
+        with self.db.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO health_records (creature_id, vet_id, examined_on,
+                        status, diagnosis, treatment)
+                SELECT c.id, v.id, %s, %s, %s, %s
+                FROM creatures c, employees v
+                WHERE c.name = %s AND v.full_name = %s
+                RETURNING id
+                """,
+                (examined_on, status, diagnosis, treatment, creature_name, vet_name),
+            )
+            id_ = cur.fetchone()["id"]
+
+        return dataclasses.replace(record, id=id_)
+
+    def latest_for(self, creature_name: str) -> HealthRecord | None:
+        """
+        Query all missions from the database ordered by departure date,
+        and returns it as a list.
+        """
+        with self.db.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    r.id as id,
+                    c.name as creature_name,
+                    e.full_name as vet_name,
+                    r.examined_on,
+                    r.status,
+                    r.diagnosis,
+                    r.treatment
+                FROM health_records r
+                JOIN creatures c on c.id = r.creature_id
+                    AND c.name = %s
+                JOIN employees e on e.id = r.vet_id
+                ORDER BY examined_on DESC, id DESC
+                LIMIT 1
+                """,
+                (creature_name,),
+            )
+            row = cur.fetchone()
+
+        if row is not None:
+            row["status"] = HealthStatus(row["status"])
+            return HealthRecord(**row)
+
+        return None

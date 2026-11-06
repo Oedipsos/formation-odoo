@@ -19,7 +19,7 @@ class CreatureFactory:
     }
 
     @classmethod
-    def create(cls, data: dict[str, str | int]) -> Creature:
+    def create(cls, data: dict) -> Creature:
         species = data.pop("species")
 
         try:
@@ -37,12 +37,12 @@ class EmployeeFactory:
     }
 
     @classmethod
-    def create(cls, data: dict[str, str | int]) -> Employee:
+    def create(cls, data: dict) -> Employee:
         role = data.pop("role")
 
         try:
-            class_ = _REGISTRY[role]
+            class_ = cls._REGISTRY[role]
         except KeyError:
             raise ValueError(f"Unknown role {role!r}")
 
-        return class_.from_dict()
+        return class_.from_dict(data)

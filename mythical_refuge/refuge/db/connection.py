@@ -24,14 +24,12 @@ class DatabaseConnection:
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type is not None:
             self.rollback()
-            self.close()
-            self.open = False
             print(f"Connection to {self.dbname!r} closed after error: {exc_value}")
-            return False
         else:
-            self.close()
-            self.open = False
             print(f"Connection to {self.dbname!r} closed.")
+
+        self.close()
+        self.open = False
 
     @staticmethod
     def _if_open(method):

@@ -16,6 +16,9 @@ from refuge.repositories.protocols import (
 
 
 class InMemoryCreatureRepository(CreatureRepository):
+        """
+    Memory representation of a database, mocking the 'creature' table interface.
+    """
     def __init__(self):
         self.creatures: dict[str, Creature] = {}
         self.next_id: int = 1
@@ -30,6 +33,7 @@ class InMemoryCreatureRepository(CreatureRepository):
         return creature
 
     def get(self, name: str) -> Creature:
+        """Returns creature associated to `name` if registered, else raises NotFoundError"""
         try:
             return self.creatures[name]
         except KeyError as e:
@@ -40,10 +44,12 @@ class InMemoryCreatureRepository(CreatureRepository):
 
     def update(self, creature: Creature) -> None:
         try:
-            stored_creature = self.get(creature.name).id
+            stored_creature = self.get(creature.name)
         except NotFoundError:
             return
         stored_creature.power_level = creature.power_level
+
+        # Try to set resurrection_count only if creature has that attribute
         if hasattr(stored_creature, "resurrection_count"):
             stored_creature.resurrection_count = getattr(
                 creature, "resurrection_count", 0
@@ -52,6 +58,10 @@ class InMemoryCreatureRepository(CreatureRepository):
 
 
 class InMemoryEmployeeRepository(EmployeeRepository):
+    """
+    Memory representation of a database, mocking the 'employee' table interface.
+    """
+
     def __init__(self):
         self.employees: dict[str, Employee] = {}
         self.next_id: int = 1
@@ -75,13 +85,17 @@ class InMemoryEmployeeRepository(EmployeeRepository):
 
 
 class InMemoryMissionRepository(MissionRepository):
+    """
+    Memory representation of a database, mocking the 'missions' table interface.
+    """
+
     def __init__(self, multipliers: dict[str, Decimal]):
         self.multipliers = multipliers
-        self.missions: dict[(str, date), Mission] = {}
+        self.missions: dict[tuple[str, date], Mission] = {}
         self.next_id: int = 1
 
     @staticmethod
-    def _get_pkey(mission: Mission):
+    def _get_pkey(mission: Mission) -> tuple[str, date]:
         return mission.creature_name, mission.departure_date
 
     def add(self, mission: Mission) -> Mission:
@@ -99,15 +113,27 @@ class InMemoryMissionRepository(MissionRepository):
         mission.id = self.next_id
         self.next_id += 1
         self.missions[pkey] = mission
+        return mission
 
     def get_open_for_creature(self, creature_name: str) -> Mission | None:
-        pass
+        return next(
+            (
+                m
+                for m in self.missions.values()
+                if m.creature_name == creature_name and m.returned_on is None
+            ),
+            None,
+        )
 
     def list_open_for_handler(self, handler_name: str) -> list[Mission]:
-        pass
+        return list(
+            m
+            for m in self.missions.values()
+            if m.handler_name == handler_name and m.returned_on is None
+        )
 
     def list_all(self) -> list[Mission]:
-        return sorted(self.missions, key=lambda x: x.departure_date)
+        return sorted(self.missions.values(), key=lambda x: x.departure_date)
 
     def update(self, mission: Mission):
         pkey = self._get_pkey(mission)
@@ -121,6 +147,9 @@ class InMemoryMissionRepository(MissionRepository):
 
 
 class InMemoryHealthRecordRepository(HealthRecordRepository):
+        """
+    Memory representation of a database, mocking the 'health_records' table interface.
+    """
     def __init__(self):
         self.next_id: int = 1
         self.records: dict[int, HealthRecord] = {}

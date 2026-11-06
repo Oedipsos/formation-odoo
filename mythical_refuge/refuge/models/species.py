@@ -9,7 +9,7 @@ class Dragon(FlyingMixin, Creature):
         self.element = element
 
     @classmethod
-    def from_dict(cls, dict_: dict[str, str | int]):
+    def from_dict(cls, dict_: dict):
         name = dict_.pop("name")
         origin = dict_.pop("origin")
         power_level = dict_.pop("power_level")
@@ -17,7 +17,7 @@ class Dragon(FlyingMixin, Creature):
 
         return cls(name, origin, power_level, element, **dict_)
 
-    def to_dict(self) -> dict[str, str | int]:
+    def to_dict(self) -> dict:
         dict_ = super().to_dict()
         dict_["element"] = self.element
         return dict_
@@ -45,19 +45,20 @@ class Dragon(FlyingMixin, Creature):
 
 class Phoenix(FlyingMixin, Creature):
     def __init__(self, name, origin, power_level, resurrection_count=0, **kwargs):
+        self.resurrection_count = (
+            kwargs.pop("resurrection_count", None) or resurrection_count
+        )
         super().__init__(name, "Phoenix", origin, power_level, **kwargs)
-        self.resurrection_count = resurrection_count
 
     @classmethod
-    def from_dict(cls, dict_: dict[str, str | int]):
+    def from_dict(cls, dict_: dict):
         name = dict_.pop("name")
         origin = dict_.pop("origin")
         power_level = dict_.pop("power_level")
-        resurrection_count = dict_.pop("resurrection_count")
 
-        return cls(name, origin, power_level, resurrection_count, **dict_)
+        return cls(name, origin, power_level, **dict_)
 
-    def to_dict(self) -> dict[str, str | int]:
+    def to_dict(self) -> dict:
         dict_ = super().to_dict()
         dict_["resurrection_count"] = self.resurrection_count
         return dict_
@@ -82,7 +83,7 @@ class Unicorn(Creature):
         super().__init__(name, "Unicorn", origin, power_level, **kwargs)
 
     @classmethod
-    def from_dict(cls, dict_: dict[str, str | int]):
+    def from_dict(cls, dict_: dict):
         name = dict_.pop("name")
         origin = dict_.pop("origin")
         power_level = dict_.pop("power_level")
@@ -108,7 +109,7 @@ class Griffin(FlyingMixin, Creature):
         super().__init__(name, "Griffin", origin, power_level, **kwargs)
 
     @classmethod
-    def from_dict(cls, dict_: dict[str, str | int]):
+    def from_dict(cls, dict_: dict):
         name = dict_.pop("name")
         origin = dict_.pop("origin")
         power_level = dict_.pop("power_level")
@@ -128,7 +129,7 @@ class Basilisk(Creature):
         super().__init__(name, "Basilisk", origin, power_level, **kwargs)
 
     @classmethod
-    def from_dict(cls, dict_: dict[str, str | int]):
+    def from_dict(cls, dict_: dict):
         name = dict_.pop("name")
         origin = dict_.pop("origin")
         power_level = dict_.pop("power_level")

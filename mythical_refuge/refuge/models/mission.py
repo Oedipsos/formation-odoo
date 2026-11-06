@@ -38,7 +38,7 @@ class Mission:
         return self.departure_date + timedelta(days=self.duration_days)
 
     @property
-    def reward(self) -> int:
+    def reward(self) -> Decimal:
         return self.base_reward * self.danger_multiplier
 
     @property
@@ -61,7 +61,7 @@ class Mission:
 
         return (reference_date - self.due_date).days
 
-    def __eq__(self, other: Mission) -> bool:
+    def __eq__(self, other) -> bool:
         if not isinstance(other, Mission):
             return NotImplemented
         return (

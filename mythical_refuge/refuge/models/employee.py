@@ -23,13 +23,6 @@ class Employee(ABC):
     def from_dict(cls, dict_):
         return cls(**dict_)
 
-    def to_dict(self) -> dict[str, str | int]:
-        return {
-            "id": self.id,
-            "full_name": self.full_name,
-            "email": self.email,
-        }
-
     def can(self, permission: str) -> bool:
         return permission in self.PERMISSIONS
 

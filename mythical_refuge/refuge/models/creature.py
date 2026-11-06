@@ -49,7 +49,7 @@ class Creature(abc.ABC):
 
         return f"Creature({name=}, {species=}, {origin=}, {power=})"
 
-    def to_dict(self) -> dict[str, str | int]:
+    def to_dict(self) -> dict:
         return {
             "id": self.id,
             "name": self.name,
@@ -60,7 +60,7 @@ class Creature(abc.ABC):
         }
 
     @classmethod
-    def from_dict(cls, dict_: dict[str, str | int]) -> Creature:
+    def from_dict(cls, dict_: dict) -> Creature:
         name = dict_.pop("name")
         species = dict_.pop("species")
         origin = dict_.pop("origin")
@@ -70,8 +70,9 @@ class Creature(abc.ABC):
 
     @classmethod
     def from_string(cls, text: str) -> Creature:
-        name, species, origin, power_level = [s.strip() for s in text.split(",")]
-        power_level = int(power_level)
+        attrs = [s.strip() for s in text.split(",")]
+        name, species, origin = attrs[:-1]
+        power_level = int(attrs[-1])
 
         return cls(name, species, origin, power_level)
 
