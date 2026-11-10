@@ -9,6 +9,17 @@ from refuge.config import db_settings
 
 
 class DatabaseConnection:
+    """Context manager handling the database connection. As only one connection to the db should exist,
+    this class is a singleton.
+    """
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self, settings: dict[str, str] | None = None):
         self.settings = settings or db_settings()
         self.dbname = self.settings["dbname"]
