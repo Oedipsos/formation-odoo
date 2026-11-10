@@ -1,3 +1,4 @@
+from contextlib import AbstractContextManager
 from typing import Protocol
 
 from refuge.models.creature import Creature
@@ -53,4 +54,9 @@ class HealthRecordRepository(Protocol):
         ...  # returns a copy with its id
 
     def latest_for(self, creature_name: str) -> HealthRecord | None:
+        ...
+
+
+class TransactionManager(Protocol):
+    def transaction(self) -> AbstractContextManager[None]:
         ...

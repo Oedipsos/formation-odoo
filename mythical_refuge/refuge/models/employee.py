@@ -12,7 +12,7 @@ class Employee(ABC):
     PERMISSIONS: frozenset[str] = frozenset()
 
     def __init__(self, full_name: str, email: str, *, id: int | None = None, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__()
         if "@" not in email:
             raise ValidationError("invalid email")
         self.email = email
@@ -89,7 +89,7 @@ class Veterinarian(Employee):
         diagnosis: str,
         treatment: str = "",
         on: date | None = None,
-    ) -> str:
+    ) -> HealthRecord:
         on = on or date.today()
         return HealthRecord(
             creature.name,

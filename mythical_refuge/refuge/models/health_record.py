@@ -1,16 +1,16 @@
 from dataclasses import dataclass, field
 from datetime import date
-from enum import StrEnum
+from enum import StrEnum, auto
 
 
 from refuge.exceptions import ValidationError
 
 
 class HealthStatus(StrEnum):
-    HEALTHY = "healthy"
-    UNDER_OBSERVATION = "under observation"
-    IN_TREATMENT = "in treatment"
-    QUARANTINE = "quarantine"
+    HEALTHY = auto()
+    UNDER_OBSERVATION = auto()
+    IN_TREATMENT = auto()
+    QUARANTINE = auto()
 
     @property
     def allows_missions(self):

@@ -1,3 +1,4 @@
+import contextlib
 import dataclasses
 from datetime import date
 from decimal import Decimal
@@ -15,20 +16,27 @@ from refuge.repositories.protocols import (
 )
 
 
-class InMemoryCreatureRepository(CreatureRepository):
-        """
+class InMemoryCreatureRepository:
+    """
     Memory representation of a database, mocking the 'creature' table interface.
     """
+
     def __init__(self):
         self.creatures: dict[str, Creature] = {}
-        self.next_id: int = 1
+        self.__next_id: int = 0
+
+    def _next_id(self):
+        id = self.__next_id
+        self.__next_id += 1
+        return id
 
     def add(self, creature: Creature) -> Creature:
         name = creature.name
+
         if name in self.creatures:
             raise ValidationError(f"key {name} already exists in repository.")
-        creature.id = self.next_id
-        self.next_id += 1
+
+        creature.id = self._next_id()
         self.creatures[name] = creature
         return creature
 
@@ -57,22 +65,27 @@ class InMemoryCreatureRepository(CreatureRepository):
         stored_creature._in_refuge = creature.in_refuge
 
 
-class InMemoryEmployeeRepository(EmployeeRepository):
+class InMemoryEmployeeRepository:
     """
     Memory representation of a database, mocking the 'employee' table interface.
     """
 
     def __init__(self):
         self.employees: dict[str, Employee] = {}
-        self.next_id: int = 1
+        self.__next_id: int = 0
 
-    def add(self, employee: Employee):
+    def _next_id(self):
+        id = self.__next_id
+        self.__next_id += 1
+        return id
+
+    def add(self, employee: Employee) -> Employee:
         full_name = employee.full_name
         if full_name in self.employees:
             raise ValidationError(f"key {full_name} already exists in repository.")
-        employee.id = self.next_id
-        self.next_id += 1
+        employee.id = self._next_id()
         self.employees[full_name] = employee
+        return employee
 
     def get(self, full_name: str) -> Employee:
         try:
@@ -84,7 +97,7 @@ class InMemoryEmployeeRepository(EmployeeRepository):
         return [self.employees[key] for key in sorted(self.employees.keys())]
 
 
-class InMemoryMissionRepository(MissionRepository):
+class InMemoryMissionRepository:
     """
     Memory representation of a database, mocking the 'missions' table interface.
     """
@@ -92,26 +105,31 @@ class InMemoryMissionRepository(MissionRepository):
     def __init__(self, multipliers: dict[str, Decimal]):
         self.multipliers = multipliers
         self.missions: dict[tuple[str, date], Mission] = {}
-        self.next_id: int = 1
+        self.__next_id: int = 0
 
     @staticmethod
     def _get_pkey(mission: Mission) -> tuple[str, date]:
         return mission.creature_name, mission.departure_date
 
+    def _next_id(self):
+        id = self.__next_id
+        self.__next_id += 1
+        return id
+
     def add(self, mission: Mission) -> Mission:
         pkey = self._get_pkey(mission)
-        try:
-            mission.danger_multiplier = self.multipliers[mission.destination]
-        except KeyError as e:
-            raise NotFoundError(e)
+        dest = mission.destination
+
+        if dest not in self.multipliers:
+            raise NotFoundError(repr(d))
 
         if mission in self.missions.values():
             raise ValidationError(
                 "{} already has a mission departing on {}".format(*pkey)
             )
 
-        mission.id = self.next_id
-        self.next_id += 1
+        mission.id = self._next_id()
+        mission.danger_multiplier = self.multipliers[dest]
         self.missions[pkey] = mission
         return mission
 
@@ -146,18 +164,24 @@ class InMemoryMissionRepository(MissionRepository):
         m.returned_on = mission.returned_on
 
 
-class InMemoryHealthRecordRepository(HealthRecordRepository):
-        """
+class InMemoryHealthRecordRepository:
+    """
     Memory representation of a database, mocking the 'health_records' table interface.
     """
+
     def __init__(self):
-        self.next_id: int = 1
         self.records: dict[int, HealthRecord] = {}
+        self.__next_id: int = 0
+
+    def _next_id(self):
+        id = self.__next_id
+        self.__next_id += 1
+        return id
 
     def add(self, record: HealthRecord) -> HealthRecord:
-        new_record = dataclasses.replace(record, id=self.next_id)
-        self.records[self.next_id] = new_record
-        self.next_id += 1
+        id = self._next_id()
+        new_record = dataclasses.replace(record, id=id)
+        self.records[id] = new_record
         return new_record
 
     def latest_for(self, creature_name: str) -> HealthRecord | None:
@@ -170,3 +194,10 @@ class InMemoryHealthRecordRepository(HealthRecordRepository):
             ),
             None,
         )
+
+
+class NoTransaction:
+    """Dummy context manager exposing the `TransactionProtocol`. For use with in-memory repositories only"""
+
+    def transaction(self):
+        return contextlib.nullcontext()

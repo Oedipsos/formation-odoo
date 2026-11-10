@@ -59,7 +59,7 @@ class Mission:
     def days_late(self) -> int:
         reference_date = self.returned_on or date.today()
 
-        return (reference_date - self.due_date).days
+        return max(0, (reference_date - self.due_date).days)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, Mission):

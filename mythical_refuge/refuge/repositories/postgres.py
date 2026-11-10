@@ -15,7 +15,7 @@ from refuge.repositories.protocols import (
 from refuge.repositories.factories import CreatureFactory, EmployeeFactory
 
 
-class PostgresCreatureRepository(CreatureRepository):
+class PostgresCreatureRepository:
     def __init__(self, db: DatabaseConnection):
         # We're assuming db connection is open, since DatabaseConnection
         # should raise if it is closed anyways
@@ -91,7 +91,7 @@ class PostgresCreatureRepository(CreatureRepository):
             )
 
 
-class PostgresEmployeeRepository(EmployeeRepository):
+class PostgresEmployeeRepository:
     def __init__(self, db: DatabaseConnection):
         # We're assuming db connection is open, since DatabaseConnection
         # should raise if it is closed anyways
@@ -147,7 +147,7 @@ class PostgresEmployeeRepository(EmployeeRepository):
         return [EmployeeFactory.create(row) for row in rows]
 
 
-class PostgresMissionRepository(MissionRepository):
+class PostgresMissionRepository:
     """
     Interface between the `missions` table and the client.
     """
@@ -174,16 +174,26 @@ class PostgresMissionRepository(MissionRepository):
                 SELECT c.id, e.id, d.id, %s, %s, %s
                 FROM creatures c, employees e, destinations d
                 WHERE c.name = %s AND d.name = %s AND e.full_name = %s
-                RETURNING id, d.danger_multiplier
+                RETURNING id
                 """,
                 (dep_date, duration_days, base_reward, c_name, d_name, h_name),
             )
             if cur.rowcount > 0:
-                row = cur.fetchone()
-                mission.id = row["id"]
-                mission.danger_multiplier = row["danger_multiplier"]
+                mission.id = cur.fetchone()["id"]
             else:
                 raise NotFoundError("Unknown creature, handler or destination.")
+
+            cur.execute(
+                """
+                SELECT danger_multiplier
+                FROM missions m 
+                JOIN destinations d ON d.id = m.destination_id
+                WHERE d.name = %s
+                """,
+                (d_name,),
+            )
+
+            mission.danger_multiplier = cur.fetchone()["danger_multiplier"]
 
         return mission
 
@@ -282,8 +292,19 @@ class PostgresMissionRepository(MissionRepository):
 
         return None
 
+    def update(self, mission: Mission) -> None:
+        with self.db.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE missions
+                    SET returned_on = %s
+                WHERE id = %s
+                """,
+                (mission.returned_on, mission.id),
+            )
 
-class PostgresHealthRecordRepository(HealthRecordRepository):
+
+class PostgresHealthRecordRepository:
     """
     Interface between the `heath_records` table and the client.
     """
