@@ -174,12 +174,14 @@ class PostgresMissionRepository(MissionRepository):
                 SELECT c.id, e.id, d.id, %s, %s, %s
                 FROM creatures c, employees e, destinations d
                 WHERE c.name = %s AND d.name = %s AND e.full_name = %s
-                RETURNING id
+                RETURNING id, d.danger_multiplier
                 """,
                 (dep_date, duration_days, base_reward, c_name, d_name, h_name),
             )
             if cur.rowcount > 0:
-                mission.id = cur.fetchone()["id"]
+                row = cur.fetchone()
+                mission.id = row["id"]
+                mission.danger_multiplier = row["danger_multiplier"]
             else:
                 raise NotFoundError("Unknown creature, handler or destination.")
 
